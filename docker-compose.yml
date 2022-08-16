@@ -1,0 +1,60 @@
+version: '3'
+services:
+ #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: app-lumen-api
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - .php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+ #MySQL Service
+  db:
+    image: mariadb:10.4.17
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: app-lumen-local
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: database
+    volumes:
+      - .dbdata:/var/lib/mysql/
+    networks:
+      - app-network
+
+#DB access tool
+  adminer:
+    depends_on:
+      - db
+    image: adminer:4.8.0
+    container_name: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+      
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+#Volumes
+volumes:
+  .dbdata:
+    driver: local
